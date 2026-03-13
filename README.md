@@ -4,6 +4,8 @@
 
 **→ https://nomitai-app.web.app**
 
+![スクリーンショット](docs/screenshot.png)
+
 ---
 
 ## 主な機能
