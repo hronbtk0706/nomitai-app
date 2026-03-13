@@ -25,13 +25,15 @@ interface Props {
   onRequestLogin: () => void;
   onLogout?: () => Promise<void>;
   onEditProfile?: () => void;
+  onShowTerms?: () => void;
+  onShowPrivacy?: () => void;
   currentArea: string;
   onAreaChange: (area: string) => void;
   messageText: string;
   onMessageTextChange: (text: string) => void;
 }
 
-export default function MainPage({ profile, onRequestLogin, onLogout, onEditProfile, currentArea, onAreaChange, messageText, onMessageTextChange }: Props) {
+export default function MainPage({ profile, onRequestLogin, onLogout, onEditProfile, onShowTerms, onShowPrivacy, currentArea, onAreaChange, messageText, onMessageTextChange }: Props) {
   const [drinkList, setDrinkList] = useState<WantToDrink[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [myDrink, setMyDrink] = useState<string | null>(null);
@@ -50,6 +52,11 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
 
   const [profileMap, setProfileMap] = useState<Record<string, { photoURL?: string }>>({});
   const [showAreaSelector, setShowAreaSelector] = useState(false);
+  const [showDrinkPanel, setShowDrinkPanel] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem("nomitai_notif") === "1");
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [areaDrinkCounts, setAreaDrinkCounts] = useState<Record<string, number>>({});
   const [reportedMsgIds, setReportedMsgIds] = useState<Set<string>>(new Set());
   const lastSendTime = useRef(0);
@@ -128,7 +135,7 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
   // 総登録者数（匿名を除く）
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !auth.currentUser) return;
     getDocs(collection(db, "users")).then((snap) => {
       let count = 0;
       snap.forEach((d) => {
@@ -138,7 +145,7 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
     }).catch((err) => {
       console.error("ユーザー数取得エラー:", err);
     });
-  }, [profile]);
+  }, [profile?.uid]);
 
   // エリアセレクター表示時に全エリアの飲みたい人数を取得
   useEffect(() => {
@@ -390,6 +397,38 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
     }
   };
 
+  // ユーザーメニューのクリック外閉じ
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showUserMenu]);
+
+  // 通知設定トグル
+  const handleNotifToggle = async () => {
+    if (notifEnabled) {
+      localStorage.setItem("nomitai_notif", "0");
+      setNotifEnabled(false);
+    } else {
+      if (!("Notification" in window)) {
+        alert("このブラウザは通知をサポートしていません");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        localStorage.setItem("nomitai_notif", "1");
+        setNotifEnabled(true);
+      } else {
+        alert("通知が拒否されました。\nブラウザの設定から「nomitai-app.web.app」の通知を許可してください。");
+      }
+    }
+  };
+
   const isAnonymous = !!(profile as UserProfile & { isAnonymous?: boolean })?.isAnonymous;
 
   const handleLogout = async () => {
@@ -440,33 +479,45 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
 
   const handleFabClick = () => {
     if (fabDrag.current?.moved) return;
-    if (myDrink) {
-      handleCancel();
-    } else {
-      handleDrink();
-    }
+    setShowDrinkPanel(true);
   };
 
   return (
     <div className="main-page">
       {/* ヘッダー */}
       <header className="header">
-        <button className="area-badge" onClick={() => setShowAreaSelector(true)}>📍 {currentArea} ▾</button>
-        {totalUsers !== null && <span className="header-stats">👥 {totalUsers}</span>}
+        <button className="area-badge" onClick={() => setShowAreaSelector(true)}>{currentArea} ▾</button>
+        {totalUsers !== null && <span className="header-stats">👥 登録者 {totalUsers}人</span>}
         <div className="header-right">
           {isGuest ? (
             <button className="login-header-btn" onClick={onRequestLogin}>
               ログイン
             </button>
           ) : (
-            <>
-              <button className="header-edit-btn" onClick={onEditProfile} title="プロフィール編集">
-                ✏️
+            <div className="user-menu-wrap" ref={userMenuRef}>
+              <button className="user-menu-btn" onClick={() => setShowUserMenu((v) => !v)}>
+                {profile!.nickname} ▾
               </button>
-              <button className="logout-btn" onClick={handleLogout}>
-                ログアウト
-              </button>
-            </>
+              {showUserMenu && (
+                <div className="user-menu-dropdown">
+                  <button className="user-menu-item" onClick={() => { setShowUserMenu(false); onEditProfile?.(); }}>
+                    プロフィール編集
+                  </button>
+                  <button className="user-menu-item" onClick={() => { setShowUserMenu(false); setShowNotifSettings(true); }}>
+                    通知設定
+                  </button>
+                  <button className="user-menu-item" onClick={() => { setShowUserMenu(false); onShowTerms?.(); }}>
+                    利用規約
+                  </button>
+                  <button className="user-menu-item" onClick={() => { setShowUserMenu(false); onShowPrivacy?.(); }}>
+                    プライバシーポリシー
+                  </button>
+                  <button className="user-menu-item logout" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
+                    ログアウト
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -667,6 +718,69 @@ export default function MainPage({ profile, onRequestLogin, onLogout, onEditProf
           <span className="drink-fab-badge">{drinkList.length}</span>
         )}
       </button>
+
+      {/* 通知設定パネル */}
+      {showNotifSettings && (
+        <div className="notif-settings-overlay" onClick={() => setShowNotifSettings(false)}>
+          <div className="notif-settings-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="notif-settings-header">
+              <h3>🔔 通知設定</h3>
+              <button className="drink-panel-close" onClick={() => setShowNotifSettings(false)}>✕</button>
+            </div>
+            <div className="notif-settings-body">
+              <div className="notif-settings-row">
+                <div>
+                  <div className="notif-settings-label">プッシュ通知</div>
+                  <div className="notif-settings-desc">新しいメッセージや飲み仲間が増えたとき通知します</div>
+                </div>
+                <button className={`notif-toggle-btn ${notifEnabled ? "on" : ""}`} onClick={handleNotifToggle}>
+                  {notifEnabled ? "ON" : "OFF"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 飲みたいパネル */}
+      {showDrinkPanel && (
+        <div className="drink-panel-overlay" onClick={() => setShowDrinkPanel(false)}>
+          <div className="drink-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="drink-panel-header">
+              <h3>🍺 飲みたい！{drinkList.length > 0 ? ` ${drinkList.length}人` : ""}</h3>
+              <button className="drink-panel-close" onClick={() => setShowDrinkPanel(false)}>✕</button>
+            </div>
+            <div className="drink-panel-list">
+              {drinkList.length === 0 ? (
+                <p className="drink-panel-empty">まだ誰もいません</p>
+              ) : (
+                <>
+                  {[...drinkList].reverse().slice(0, 5).map((d) => (
+                    <div key={d.uid} className={`drink-panel-item ${profile && d.uid === profile.uid ? "mine" : ""}`}>
+                      <span className="drink-panel-name">{d.nickname}</span>
+                      <span className="drink-panel-info">{d.ageGroup} · {d.gender}</span>
+                    </div>
+                  ))}
+                  {drinkList.length > 5 && (
+                    <p className="drink-panel-more">他に{drinkList.length - 5}人います</p>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="drink-panel-action">
+              {myDrink ? (
+                <button className="drink-panel-cancel-btn" onClick={handleCancel}>
+                  取り消す
+                </button>
+              ) : (
+                <button className="drink-panel-join-btn" onClick={handleDrink} disabled={drinking}>
+                  {drinking ? "..." : "飲みたい！🍺"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

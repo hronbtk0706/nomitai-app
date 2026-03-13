@@ -17,18 +17,22 @@ function App() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [returnToLogin, setReturnToLogin] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [showGpsPrompt, setShowGpsPrompt] = useState(() => {
+    if (navigator.userAgent.includes("ReactSnap")) return false;
     return !localStorage.getItem("nomitai_gps_asked");
   });
   const [gpsDetecting, setGpsDetecting] = useState(false);
   const [currentArea, setCurrentArea] = useState(() => {
-    return localStorage.getItem("nomitai_area") || "仙台";
+    return localStorage.getItem("nomitai_area") || "東京";
   });
 
-  // アプリ起動時に古いデータを掃除（6時間に1回）
+  // アプリ起動時に古いデータを掃除（6時間に1回、プリレンダリング時はスキップ）
   useEffect(() => {
-    cleanupStaleData();
+    if (!navigator.userAgent.includes("ReactSnap")) {
+      cleanupStaleData();
+    }
   }, []);
 
   // プロフィールのエリアと同期
@@ -78,52 +82,26 @@ function App() {
     );
   }
 
-  // 初回アクセス時のGPS確認画面
-  if (showGpsPrompt) {
-    return (
-      <div className="gps-prompt-page">
-        <div className="gps-prompt-card">
-          <div className="gps-prompt-icon">📍</div>
-          <h1>ノミタイ</h1>
-          <p className="gps-prompt-text">
-            近くのエリアのチャットに自動で入るために、<br />位置情報を使用します
-          </p>
-          <button className="gps-prompt-allow" onClick={handleGpsAllow} disabled={gpsDetecting}>
-            {gpsDetecting ? "📡 検出中..." : "許可する"}
-          </button>
-          <button className="gps-prompt-skip" onClick={handleGpsSkip}>
-            スキップ
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // 利用規約・プライバシーポリシー
   if (showTerms) {
-    return <TermsPage onBack={() => { setShowTerms(false); setShowLogin(true); }} />;
+    return <TermsPage onBack={() => { setShowTerms(false); if (returnToLogin) setShowLogin(true); }} />;
   }
   if (showPrivacy) {
-    return <PrivacyPage onBack={() => { setShowPrivacy(false); setShowLogin(true); }} />;
+    return <PrivacyPage onBack={() => { setShowPrivacy(false); if (returnToLogin) setShowLogin(true); }} />;
   }
 
   // ログイン画面を表示（ゲストがログインを要求した場合）
   if (showLogin && !user) {
-    return <LoginPage onBack={() => setShowLogin(false)} onShowTerms={() => { setShowLogin(false); setShowTerms(true); }} onShowPrivacy={() => { setShowLogin(false); setShowPrivacy(true); }} />;
-  }
-
-  // 未ログイン → ゲストモードでメイン画面
-  if (!user) {
-    return <MainPage profile={null} onRequestLogin={() => setShowLogin(true)} currentArea={currentArea} onAreaChange={handleAreaChange} messageText={messageText} onMessageTextChange={setMessageText} />;
+    return <LoginPage onBack={() => setShowLogin(false)} onShowTerms={() => { setReturnToLogin(true); setShowLogin(false); setShowTerms(true); }} onShowPrivacy={() => { setReturnToLogin(true); setShowLogin(false); setShowPrivacy(true); }} currentArea={currentArea} />;
   }
 
   // ログイン済み・プロフィール未設定 → プロフィール入力画面
-  if (!profile) {
+  if (user && !profile) {
     return <RegisterPage uid={user.uid} onRegistered={(p) => setProfile(p)} />;
   }
 
   // プロフィール編集画面
-  if (showEditProfile) {
+  if (showEditProfile && user && profile) {
     return (
       <RegisterPage
         uid={user.uid}
@@ -134,8 +112,40 @@ function App() {
     );
   }
 
-  // 登録済み → メイン画面
-  return <MainPage profile={profile} onRequestLogin={() => {}} onLogout={cleanupAnonymous} onEditProfile={() => setShowEditProfile(true)} currentArea={currentArea} onAreaChange={handleAreaChange} messageText={messageText} onMessageTextChange={setMessageText} />;
+  // メイン画面（GPS確認はオーバーレイで表示）
+  return (
+    <>
+      {showGpsPrompt && (
+        <div className="gps-prompt-page">
+          <div className="gps-prompt-card">
+            <div className="gps-prompt-icon">📍</div>
+            <h1>ノミタイ</h1>
+            <p className="gps-prompt-text">
+              近くのエリアのチャットに自動で入るために、<br />位置情報を使用します
+            </p>
+            <button className="gps-prompt-allow" onClick={handleGpsAllow} disabled={gpsDetecting}>
+              {gpsDetecting ? "📡 検出中..." : "許可する"}
+            </button>
+            <button className="gps-prompt-skip" onClick={handleGpsSkip}>
+              スキップ
+            </button>
+          </div>
+        </div>
+      )}
+      <MainPage
+        profile={profile}
+        onRequestLogin={() => setShowLogin(true)}
+        onLogout={user ? cleanupAnonymous : undefined}
+        onEditProfile={user && profile ? () => setShowEditProfile(true) : undefined}
+        onShowTerms={() => { setReturnToLogin(false); setShowTerms(true); }}
+        onShowPrivacy={() => { setReturnToLogin(false); setShowPrivacy(true); }}
+        currentArea={currentArea}
+        onAreaChange={handleAreaChange}
+        messageText={messageText}
+        onMessageTextChange={setMessageText}
+      />
+    </>
+  );
 }
 
 export default App;

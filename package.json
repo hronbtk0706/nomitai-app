@@ -6,8 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "react-snap",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "reactSnap": {
+    "source": "dist",
+    "destinationDir": "dist",
+    "include": ["/"],
+    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
+    "waitFor": 3000,
+    "minifyHtml": false,
+    "preloadImages": false,
+    "asyncScriptTags": true
   },
   "dependencies": {
     "firebase": "^12.10.0",
@@ -25,6 +36,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "react-snap": "^1.23.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.0"

@@ -14,9 +14,10 @@ interface Props {
   onBack?: () => void;
   onShowTerms?: () => void;
   onShowPrivacy?: () => void;
+  currentArea?: string;
 }
 
-export default function LoginPage({ onBack, onShowTerms, onShowPrivacy }: Props) {
+export default function LoginPage({ onBack, onShowTerms, onShowPrivacy, currentArea = "東京" }: Props) {
   const [mode, setMode] = useState<"select" | "email">("select");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +51,7 @@ export default function LoginPage({ onBack, onShowTerms, onShowPrivacy }: Props)
         nickname: anonName,
         ageGroup: "20代",
         gender: "その他",
-        area: "仙台",
+        area: currentArea,
         isAnonymous: true,
         createdAt: Date.now(),
       });

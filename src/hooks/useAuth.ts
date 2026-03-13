@@ -51,6 +51,11 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
+    // プリレンダリング時はFirebase接続をスキップ
+    if (navigator.userAgent.includes("ReactSnap")) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const docRef = doc(db, "users", firebaseUser.uid);

@@ -22,7 +22,7 @@ export default function RegisterPage({ uid, onRegistered, existingProfile, onCan
   const [gender, setGender] = useState<Gender>(existingProfile?.gender ?? "男性");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(existingProfile?.photoURL ?? null);
-  const [area, setArea] = useState(existingProfile?.area ?? "仙台");
+  const [area, setArea] = useState(existingProfile?.area ?? "東京");
   const [gpsDetecting, setGpsDetecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
