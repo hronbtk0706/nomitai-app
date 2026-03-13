@@ -1,26 +1,47 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { uploadImage } from "../lib/cloudinary";
+import { AREA_NAMES, findNearestArea, getCurrentPosition } from "../lib/areas";
 import type { AgeGroup, Gender, UserProfile } from "../types";
 
 interface Props {
   uid: string;
   onRegistered: (profile: UserProfile) => void;
+  existingProfile?: UserProfile;
+  onCancel?: () => void;
 }
 
 const AGE_GROUPS: AgeGroup[] = ["20代", "30代", "40代", "50代〜"];
 const GENDERS: Gender[] = ["男性", "女性", "その他"];
 
-export default function RegisterPage({ uid, onRegistered }: Props) {
-  const [nickname, setNickname] = useState("");
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>("20代");
-  const [gender, setGender] = useState<Gender>("男性");
+export default function RegisterPage({ uid, onRegistered, existingProfile, onCancel }: Props) {
+  const isEdit = !!existingProfile;
+  const [nickname, setNickname] = useState(existingProfile?.nickname ?? "");
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>(existingProfile?.ageGroup ?? "20代");
+  const [gender, setGender] = useState<Gender>(existingProfile?.gender ?? "男性");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(existingProfile?.photoURL ?? null);
+  const [area, setArea] = useState(existingProfile?.area ?? "仙台");
+  const [gpsDetecting, setGpsDetecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 新規登録時にGPSで最寄りエリアを提案
+  useEffect(() => {
+    if (isEdit) return;
+    setGpsDetecting(true);
+    getCurrentPosition()
+      .then((pos) => {
+        const nearest = findNearestArea(pos.coords.latitude, pos.coords.longitude);
+        setArea(nearest);
+      })
+      .catch(() => {
+        // GPS拒否・エラー時は仙台のまま
+      })
+      .finally(() => setGpsDetecting(false));
+  }, [isEdit]);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,6 +69,8 @@ export default function RegisterPage({ uid, onRegistered }: Props) {
       let photoURL: string | undefined;
       if (photoFile) {
         photoURL = await uploadImage(photoFile);
+      } else if (isEdit && existingProfile?.photoURL) {
+        photoURL = existingProfile.photoURL;
       }
 
       const profile: UserProfile = {
@@ -55,9 +78,9 @@ export default function RegisterPage({ uid, onRegistered }: Props) {
         nickname: nickname.trim(),
         ageGroup,
         gender,
-        area: "仙台",
+        area,
         photoURL,
-        createdAt: Date.now(),
+        createdAt: isEdit ? existingProfile!.createdAt : Date.now(),
       };
       await setDoc(doc(db, "users", uid), profile);
       onRegistered(profile);
@@ -71,8 +94,8 @@ export default function RegisterPage({ uid, onRegistered }: Props) {
 
   return (
     <div className="register-page">
-      <h1>プロフィール設定</h1>
-      <p className="register-subtitle">あなたのことを教えてください</p>
+      <h1>{isEdit ? "プロフィール編集" : "プロフィール設定"}</h1>
+      {!isEdit && <p className="register-subtitle">あなたのことを教えてください</p>}
 
       <form onSubmit={handleSubmit} className="register-form">
         {/* プロフィール画像 */}
@@ -103,7 +126,7 @@ export default function RegisterPage({ uid, onRegistered }: Props) {
             onChange={(e) => setNickname(e.target.value)}
             placeholder="10文字以内"
             maxLength={10}
-            autoFocus
+            autoFocus={!isEdit}
           />
         </div>
 
@@ -140,15 +163,31 @@ export default function RegisterPage({ uid, onRegistered }: Props) {
         </div>
 
         <div className="form-group">
-          <label>エリア</label>
-          <div className="area-display">📍 仙台</div>
+          <label>エリア {gpsDetecting && <span className="gps-detecting">📡 検出中...</span>}</label>
+          <div className="button-group area-group">
+            {AREA_NAMES.map((a) => (
+              <button
+                key={a}
+                type="button"
+                className={`select-btn ${area === a ? "selected" : ""}`}
+                onClick={() => setArea(a)}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
         </div>
 
         {error && <p className="error-message">{error}</p>}
 
         <button type="submit" className="submit-btn" disabled={submitting}>
-          {submitting ? "登録中..." : "はじめる"}
+          {submitting ? (isEdit ? "保存中..." : "登録中...") : (isEdit ? "保存する" : "はじめる")}
         </button>
+        {isEdit && onCancel && (
+          <button type="button" className="cancel-btn register-cancel" onClick={onCancel}>
+            キャンセル
+          </button>
+        )}
       </form>
     </div>
   );

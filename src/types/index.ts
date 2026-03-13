@@ -29,6 +29,7 @@ export interface ChatMessage {
   photoURL?: string;
   text: string;
   imageUrl?: string;
+  isSystem?: boolean;
   reactions?: Reactions;
   createdAt: number;
 }

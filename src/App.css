@@ -127,6 +127,79 @@
   cursor: pointer;
 }
 
+.legal-links {
+  margin-top: 24px;
+  font-size: 0.7rem;
+  color: #999;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.legal-link {
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0 2px;
+}
+
+/* ========== 利用規約・プライバシーポリシー ========== */
+.legal-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.legal-page h1 {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+  color: #f5a623;
+}
+
+.legal-date {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 24px;
+}
+
+.legal-page h2 {
+  font-size: 0.95rem;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.legal-page p,
+.legal-page li {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.legal-page ul {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.legal-page section {
+  margin-bottom: 16px;
+}
+
+.legal-back-btn {
+  display: block;
+  margin: 32px auto 0;
+  padding: 10px 40px;
+  background: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 /* ========== 登録画面 ========== */
 .register-page {
   max-width: 400px;
@@ -277,6 +350,18 @@
   cursor: not-allowed;
 }
 
+.register-cancel {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid #666;
+  border-radius: 8px;
+  color: #999;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
 /* ========== メイン画面 ========== */
 .main-page {
   max-width: 500px;
@@ -290,37 +375,55 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 8px 10px;
   border-bottom: 1px solid #333;
+  gap: 6px;
+  overflow: hidden;
 }
 
 .area-badge {
-  font-size: 1rem;
+  font-size: 0.85rem;
+  background: none;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.area-badge:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header-stats {
+  font-size: 0.7rem;
+  color: #aaa;
+  white-space: nowrap;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
 }
 
-.header-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
+.header-edit-btn {
+  background: none;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
-.header-avatar-default {
-  font-size: 1.2rem;
-}
-
-.user-badge {
-  font-size: 0.85rem;
-  color: #aaa;
-  background: #16213e;
-  padding: 4px 12px;
-  border-radius: 12px;
+.header-edit-btn:active {
+  opacity: 1;
 }
 
 .login-header-btn {
@@ -334,103 +437,73 @@
 }
 
 .logout-btn {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #666;
   background: none;
   border: 1px solid #444;
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 3px 6px;
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-/* 飲みたいセクション */
-.drink-section {
-  padding: 16px;
-  border-bottom: 1px solid #333;
+/* 飲みたいFAB */
+.drink-fab {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #f5a623;
+  font-size: 1.6rem;
+  cursor: grab;
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 100;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.drink-count {
-  font-size: 1.1rem;
-  margin-bottom: 12px;
-  color: #f5a623;
-  transition: transform 0.3s;
+.drink-fab:active {
+  transform: scale(0.9);
 }
 
-.drink-count.bounce {
-  animation: bounce-pop 0.6s ease;
+.drink-fab.active {
+  background: #555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.count-number {
-  font-size: 1.5rem;
-  font-weight: bold;
-  display: inline-block;
+.drink-fab.bounce {
+  animation: fab-bounce 0.6s ease;
 }
 
-.drink-count.bounce .count-number {
-  animation: number-pop 0.6s ease;
-}
-
-@keyframes bounce-pop {
+@keyframes fab-bounce {
   0% { transform: scale(1); }
-  30% { transform: scale(1.05); }
-  60% { transform: scale(0.98); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.95); }
   100% { transform: scale(1); }
 }
 
-/* 光線アニメーション */
-.ray {
+.drink-fab-badge {
   position: absolute;
-  width: 2px;
-  background: #f5a623;
-  border-radius: 1px;
-  opacity: 0;
-  pointer-events: none;
-  top: 0;
-  left: 50%;
-}
-
-.drink-count.bounce .ray1 {
-  animation: ray-left 0.45s ease-out forwards;
-}
-.drink-count.bounce .ray2 {
-  animation: ray-up 0.45s ease-out forwards;
-}
-.drink-count.bounce .ray3 {
-  animation: ray-right 0.45s ease-out forwards;
-}
-
-@keyframes ray-left {
-  0% { opacity: 1; height: 3px; transform: translate(-50%, 0); }
-  100% { opacity: 0; height: 8px; transform: translate(-10px, -14px) rotate(-35deg); }
-}
-@keyframes ray-up {
-  0% { opacity: 1; height: 3px; transform: translate(-50%, 0); }
-  100% { opacity: 0; height: 10px; transform: translate(-50%, -16px); }
-}
-@keyframes ray-right {
-  0% { opacity: 1; height: 3px; transform: translate(-50%, 0); }
-  100% { opacity: 0; height: 8px; transform: translate(6px, -14px) rotate(35deg); }
-}
-
-@keyframes number-pop {
-  0% { transform: scale(1); color: #f5a623; }
-  30% { transform: scale(1.4); color: #ff6b6b; }
-  60% { transform: scale(0.95); color: #f5a623; }
-  100% { transform: scale(1); color: #f5a623; }
-}
-
-.drink-list {
-  margin-bottom: 16px;
-}
-
-.drink-item {
-  padding: 8px 0;
-  font-size: 0.95rem;
-  border-bottom: 1px solid #222;
-}
-
-.drink-item:last-child {
-  border-bottom: none;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #ff4444;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
 }
 
 .empty-message {
@@ -439,83 +512,13 @@
   padding: 8px 0;
 }
 
-.drink-btn {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  background: #f5a623;
-  color: #1a1a2e;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.drink-btn:active {
-  transform: scale(0.97);
-}
-
-.cancel-btn {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #666;
-  border-radius: 12px;
-  background: transparent;
-  color: #999;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.time-select {
-  text-align: center;
-}
-
-.time-select p {
-  margin-bottom: 12px;
-  color: #ccc;
-}
-
-.time-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.time-btn {
-  padding: 10px 18px;
-  border: 1px solid #f5a623;
-  border-radius: 20px;
-  background: transparent;
-  color: #f5a623;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.time-btn:hover {
-  background: #f5a623;
-  color: #1a1a2e;
-}
-
-.cancel-link {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  font-size: 0.85rem;
-  text-decoration: underline;
-}
-
 /* チャットセクション */
 .chat-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 16px;
+  padding: 8px 16px 16px;
 }
 
 .chat-section h2 {
@@ -551,9 +554,23 @@
   background: #555;
 }
 
+.system-message {
+  text-align: center;
+  margin: 6px 0;
+}
+
+.system-text {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.1);
+  border-radius: 12px;
+  padding: 3px 12px;
+}
+
 .chat-message {
-  margin-bottom: 12px;
-  font-size: 0.9rem;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
   user-select: none;
   -webkit-user-select: none;
   max-width: 85%;
@@ -565,10 +582,10 @@
 }
 
 .chat-nickname {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: bold;
   color: #f5a623;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .chat-message.mine .chat-nickname {
@@ -577,8 +594,8 @@
 }
 
 .chat-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -586,13 +603,13 @@
 }
 
 .chat-avatar-default {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   align-self: flex-start;
 }
 
@@ -610,7 +627,7 @@
   background: #1e2a45;
   border-radius: 12px;
   border-top-left-radius: 2px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   max-width: 100%;
   overflow: hidden;
 }
@@ -623,12 +640,12 @@
 
 .chat-text {
   color: #ddd;
-  line-height: 1.5;
+  line-height: 1.4;
   word-break: break-word;
 }
 
 .chat-time {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: #666;
   white-space: nowrap;
   flex-shrink: 0;
@@ -648,15 +665,15 @@
   position: relative;
   background: none;
   border: 1px solid transparent;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.65rem;
   cursor: pointer;
-  padding: 1px 4px;
+  padding: 1px 3px;
   opacity: 0.4;
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .reaction-btn:hover {
@@ -721,7 +738,7 @@
 }
 
 .reaction-count {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #ccc;
 }
 
@@ -837,10 +854,10 @@
 
 /* 画像添付ボタン */
 .image-attach-btn {
-  padding: 8px;
+  padding: 4px;
   border: none;
   background: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   flex-shrink: 0;
   opacity: 0.7;
@@ -853,38 +870,207 @@
 
 .chat-form {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   padding-top: 8px;
   border-top: 1px solid #333;
   align-items: center;
 }
 
-.chat-form input {
+.chat-input-wrapper {
   flex: 1;
-  padding: 10px 12px;
+  min-width: 0;
+  position: relative;
+}
+
+.chat-input-label {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  font-size: 0.72rem;
+  color: #555;
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.3;
+  right: 10px;
+}
+
+.chat-input-wrapper input {
+  width: 100%;
+  padding: 10px 10px;
   border: 1px solid #333;
   border-radius: 8px;
   background: #16213e;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 16px;
   outline: none;
 }
 
-.chat-form input:focus {
+.chat-input-wrapper input:focus {
   border-color: #f5a623;
 }
 
-.chat-form button {
-  padding: 10px 20px;
+.chat-form button[type="submit"] {
+  padding: 10px 14px;
   border: none;
   border-radius: 8px;
   background: #f5a623;
   color: #1a1a2e;
   font-weight: bold;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .chat-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* エリアセレクター */
+.area-selector-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.area-selector {
+  background: #1a1a2e;
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 500px;
+  max-height: 70vh;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.area-selector h3 {
+  text-align: center;
+  color: #f5a623;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.area-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.area-selector-item {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #ccc;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.area-selector-item:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.area-selector-item.active {
+  background: rgba(245, 166, 35, 0.15);
+  color: #f5a623;
+  font-weight: bold;
+}
+
+.area-drink-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #f5a623;
+}
+
+.area-selector-item {
+  display: flex;
+  align-items: center;
+}
+
+/* 登録画面エリア選択 */
+.area-group {
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #444 transparent;
+}
+
+.gps-detecting {
+  font-size: 0.75rem;
+  color: #4fc3f7;
+  font-weight: normal;
+}
+
+/* GPS確認画面 */
+.gps-prompt-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100dvh;
+  padding: 20px;
+}
+
+.gps-prompt-card {
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.gps-prompt-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.gps-prompt-card h1 {
+  font-size: 2rem;
+  color: #f5a623;
+  margin-bottom: 20px;
+}
+
+.gps-prompt-text {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.gps-prompt-allow {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-bottom: 12px;
+}
+
+.gps-prompt-allow:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gps-prompt-allow:active {
+  opacity: 0.8;
+}
+
+.gps-prompt-skip {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 12px;
+  background: transparent;
+  color: #999;
+  font-size: 1rem;
+  cursor: pointer;
 }

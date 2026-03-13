@@ -4,6 +4,8 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
+  getDocs,
   query,
   where,
   onSnapshot,
@@ -15,16 +17,21 @@ import { auth, db } from "../lib/firebase";
 import { uploadImage } from "../lib/cloudinary";
 import type { UserProfile, WantToDrink, ChatMessage, Reactions } from "../types";
 import { getTodayId } from "../lib/date";
+import { AREA_NAMES } from "../lib/areas";
+import { containsNgWord } from "../lib/ngWords";
 
 interface Props {
   profile: UserProfile | null;
   onRequestLogin: () => void;
   onLogout?: () => Promise<void>;
+  onEditProfile?: () => void;
+  currentArea: string;
+  onAreaChange: (area: string) => void;
   messageText: string;
   onMessageTextChange: (text: string) => void;
 }
 
-export default function MainPage({ profile, onRequestLogin, onLogout, messageText, onMessageTextChange }: Props) {
+export default function MainPage({ profile, onRequestLogin, onLogout, onEditProfile, currentArea, onAreaChange, messageText, onMessageTextChange }: Props) {
   const [drinkList, setDrinkList] = useState<WantToDrink[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [myDrink, setMyDrink] = useState<string | null>(null);
@@ -39,15 +46,33 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
   const prevCountRef = useRef(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevMsgCountRef = useRef(0);
+
+  const [profileMap, setProfileMap] = useState<Record<string, { photoURL?: string }>>({});
+  const [showAreaSelector, setShowAreaSelector] = useState(false);
+  const [areaDrinkCounts, setAreaDrinkCounts] = useState<Record<string, number>>({});
+  const [reportedMsgIds, setReportedMsgIds] = useState<Set<string>>(new Set());
+  const lastSendTime = useRef(0);
+
+  // FABドラッグ
+  const [fabPos, setFabPos] = useState(() => {
+    const saved = localStorage.getItem("nomitai_fab_pos");
+    if (saved) {
+      try { return JSON.parse(saved) as { x: number; y: number }; } catch { /* ignore */ }
+    }
+    return { x: window.innerWidth - 76, y: window.innerHeight - 140 };
+  });
+  const fabDrag = useRef<{ startX: number; startY: number; origX: number; origY: number; moved: boolean } | null>(null);
 
   const isGuest = !profile;
   const todayId = getTodayId();
+  const roomId = `${currentArea}_${todayId}`;
 
   // 「飲みたい」一覧をリアルタイム購読
   useEffect(() => {
     const q = query(
       collection(db, "drinks"),
-      where("dayId", "==", todayId),
+      where("dayId", "==", roomId),
       orderBy("createdAt", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -64,7 +89,7 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
       setMyDrink(myDocId);
     });
     return () => unsubscribe();
-  }, [todayId, profile?.uid]);
+  }, [roomId, profile?.uid]);
 
   // 飲みたい人数の変化を検知してアニメーション
   useEffect(() => {
@@ -79,7 +104,7 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
   useEffect(() => {
     const q = query(
       collection(db, "chats"),
-      where("dayId", "==", todayId),
+      where("dayId", "==", roomId),
       orderBy("createdAt", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -90,12 +115,75 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
       setMessages(msgs);
     });
     return () => unsubscribe();
-  }, [todayId]);
+  }, [roomId]);
 
-  // チャット自動スクロール
+  // チャット自動スクロール（メッセージ追加時のみ）
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > prevMsgCountRef.current) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages.length]);
+
+  // 総登録者数（匿名を除く）
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
+  useEffect(() => {
+    if (!profile) return;
+    getDocs(collection(db, "users")).then((snap) => {
+      let count = 0;
+      snap.forEach((d) => {
+        if (!d.data().isAnonymous) count++;
+      });
+      setTotalUsers(count);
+    }).catch((err) => {
+      console.error("ユーザー数取得エラー:", err);
+    });
+  }, [profile]);
+
+  // エリアセレクター表示時に全エリアの飲みたい人数を取得
+  useEffect(() => {
+    if (!showAreaSelector) return;
+    const fetchCounts = async () => {
+      const counts: Record<string, number> = {};
+      for (const area of AREA_NAMES) {
+        const areaRoomId = `${area}_${todayId}`;
+        const q = query(
+          collection(db, "drinks"),
+          where("dayId", "==", areaRoomId)
+        );
+        const snap = await getDocs(q);
+        counts[area] = snap.size;
+      }
+      setAreaDrinkCounts(counts);
+    };
+    fetchCounts();
+  }, [showAreaSelector, todayId]);
+
+  // チャット参加者のプロフィール画像を取得
+  useEffect(() => {
+    const uids = [...new Set(messages.map((m) => m.uid))];
+    const missing = uids.filter((uid) => !(uid in profileMap));
+    if (missing.length === 0) return;
+    missing.forEach(async (uid) => {
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) {
+          const data = snap.data() as { photoURL?: string };
+          setProfileMap((prev) => ({ ...prev, [uid]: { photoURL: data.photoURL } }));
+        } else {
+          setProfileMap((prev) => ({ ...prev, [uid]: {} }));
+        }
+      } catch {
+        setProfileMap((prev) => ({ ...prev, [uid]: {} }));
+      }
+    });
   }, [messages]);
+
+  // 自分のプロフィール変更をキャッシュに反映
+  useEffect(() => {
+    if (!profile) return;
+    setProfileMap((prev) => ({ ...prev, [profile.uid]: { photoURL: profile.photoURL } }));
+  }, [profile?.uid, profile?.photoURL]);
 
   // ゲストがアクションしようとしたときのチェック
   const requireLogin = (): boolean => {
@@ -112,13 +200,22 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
     if (drinking || myDrink || !profile) return;
     setDrinking(true);
     try {
+      const now = Date.now();
       await addDoc(collection(db, "drinks"), {
         uid: profile.uid,
         nickname: profile.nickname,
         ageGroup: profile.ageGroup,
         gender: profile.gender,
-        dayId: todayId,
-        createdAt: Date.now(),
+        dayId: roomId,
+        createdAt: now,
+      });
+      await addDoc(collection(db, "chats"), {
+        uid: profile.uid,
+        nickname: profile.nickname,
+        text: `🍺 ${profile.nickname}さんが「飲みたい！」を押しました`,
+        isSystem: true,
+        dayId: roomId,
+        createdAt: now + 1,
       });
     } catch (err) {
       console.error("飲みたい表明に失敗:", err);
@@ -165,8 +262,22 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
     if (requireLogin()) return;
     if ((!messageText.trim() && !imageFile) || sending || !profile) return;
 
+    // NGワードチェック
+    if (messageText.trim() && containsNgWord(messageText)) {
+      alert("不適切な表現が含まれています。内容を修正してください。");
+      return;
+    }
+
+    // スパム防止（3秒間隔）
+    const now = Date.now();
+    if (now - lastSendTime.current < 3000) {
+      alert("メッセージの送信間隔が短すぎます。少し待ってから送信してください。");
+      return;
+    }
+
     setSending(true);
     try {
+      lastSendTime.current = Date.now();
       let imageUrl: string | undefined;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
@@ -176,7 +287,7 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
         uid: profile.uid,
         nickname: profile.nickname,
         text: messageText.trim(),
-        dayId: todayId,
+        dayId: roomId,
         createdAt: Date.now(),
       };
       if (profile.photoURL) chatData.photoURL = profile.photoURL;
@@ -231,14 +342,43 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
     setModalImageIndex(idx >= 0 ? idx : 0);
   };
 
+  // 通報
+  const handleReport = async (msg: ChatMessage) => {
+    if (isGuest || !profile) return;
+    if (reportedMsgIds.has(msg.id)) {
+      alert("このメッセージは既に通報済みです。");
+      return;
+    }
+    if (!confirm("このメッセージを不適切として通報しますか？")) return;
+    try {
+      await addDoc(collection(db, "reports"), {
+        messageId: msg.id,
+        messageText: msg.text,
+        messageUid: msg.uid,
+        messageNickname: msg.nickname,
+        reporterUid: profile.uid,
+        dayId: roomId,
+        createdAt: Date.now(),
+      });
+      setReportedMsgIds((prev) => new Set(prev).add(msg.id));
+      alert("通報を受け付けました。ご協力ありがとうございます。");
+    } catch (err) {
+      console.error("通報に失敗:", err);
+    }
+  };
+
   // メッセージ長押し削除
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMessagePressStart = (msg: ChatMessage) => {
-    if (isGuest || msg.uid !== profile!.uid) return;
+    if (isGuest) return;
     longPressTimer.current = setTimeout(async () => {
-      if (confirm("このメッセージを削除しますか？")) {
-        await deleteDoc(doc(db, "chats", msg.id));
+      if (msg.uid === profile!.uid) {
+        if (confirm("このメッセージを削除しますか？")) {
+          await deleteDoc(doc(db, "chats", msg.id));
+        }
+      } else {
+        handleReport(msg);
       }
     }, 500);
   };
@@ -266,69 +406,84 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
     }
   };
 
+  // FABドラッグハンドラ
+  const clampFab = (x: number, y: number) => ({
+    x: Math.max(0, Math.min(x, window.innerWidth - 56)),
+    y: Math.max(0, Math.min(y, window.innerHeight - 56)),
+  });
+
+  const handleFabPointerDown = (e: React.PointerEvent) => {
+    fabDrag.current = { startX: e.clientX, startY: e.clientY, origX: fabPos.x, origY: fabPos.y, moved: false };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleFabPointerMove = (e: React.PointerEvent) => {
+    if (!fabDrag.current) return;
+    const dx = e.clientX - fabDrag.current.startX;
+    const dy = e.clientY - fabDrag.current.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) fabDrag.current.moved = true;
+    if (fabDrag.current.moved) {
+      setFabPos(clampFab(fabDrag.current.origX + dx, fabDrag.current.origY + dy));
+    }
+  };
+
+  const handleFabPointerUp = () => {
+    if (fabDrag.current) {
+      if (fabDrag.current.moved) {
+        localStorage.setItem("nomitai_fab_pos", JSON.stringify(fabPos));
+      }
+      const wasDrag = fabDrag.current.moved;
+      fabDrag.current = null;
+      if (wasDrag) return; // ドラッグ時はクリック発火しない
+    }
+  };
+
+  const handleFabClick = () => {
+    if (fabDrag.current?.moved) return;
+    if (myDrink) {
+      handleCancel();
+    } else {
+      handleDrink();
+    }
+  };
+
   return (
     <div className="main-page">
       {/* ヘッダー */}
       <header className="header">
-        <span className="area-badge">📍 仙台</span>
-        {isGuest ? (
-          <button className="login-header-btn" onClick={onRequestLogin}>
-            ログイン
-          </button>
-        ) : (
-          <div className="header-right">
-            {profile.photoURL ? (
-              <img src={profile.photoURL} alt="" className="header-avatar" />
-            ) : (
-              <span className="header-avatar-default">😊</span>
-            )}
-            <span className="user-badge">{profile.nickname}</span>
-            <button className="logout-btn" onClick={handleLogout}>
-              ログアウト
+        <button className="area-badge" onClick={() => setShowAreaSelector(true)}>📍 {currentArea} ▾</button>
+        {totalUsers !== null && <span className="header-stats">👥 {totalUsers}</span>}
+        <div className="header-right">
+          {isGuest ? (
+            <button className="login-header-btn" onClick={onRequestLogin}>
+              ログイン
             </button>
-          </div>
-        )}
+          ) : (
+            <>
+              <button className="header-edit-btn" onClick={onEditProfile} title="プロフィール編集">
+                ✏️
+              </button>
+              <button className="logout-btn" onClick={handleLogout}>
+                ログアウト
+              </button>
+            </>
+          )}
+        </div>
       </header>
-
-      {/* 飲みたい一覧 */}
-      <section className="drink-section">
-        <h2 className={`drink-count ${countBounce ? "bounce" : ""}`}>
-          🍺 今夜飲みたい人：<span className="count-number">
-            {countBounce && (
-              <>
-                <span className="ray ray1" />
-                <span className="ray ray2" />
-                <span className="ray ray3" />
-              </>
-            )}
-            {drinkList.length}
-          </span>人
-        </h2>
-        {drinkList.length === 0 && (
-          <p className="empty-message">まだ誰もいません。最初の一人になろう！</p>
-        )}
-
-        {/* 飲みたいボタン / 取り消しボタン */}
-        {!isGuest && myDrink ? (
-          <button className="cancel-btn" onClick={handleCancel}>
-            取り消す
-          </button>
-        ) : (
-          <button
-            className="drink-btn"
-            onClick={handleDrink}
-            disabled={!isGuest && drinking}
-          >
-            🍺 飲みたい
-          </button>
-        )}
-      </section>
 
       {/* チャット */}
       <section className="chat-section">
-        <h2>チャット</h2>
         <div className="chat-messages">
-          {messages.map((msg) => (
+          {messages.map((msg) => {
+            if (msg.isSystem) {
+              return (
+                <div key={msg.id} className="system-message">
+                  <span className="system-text">{msg.text}</span>
+                </div>
+              );
+            }
+            const avatarUrl = profileMap[msg.uid]?.photoURL || msg.photoURL;
+            return (
             <div
               key={msg.id}
               className={`chat-message ${!isGuest && msg.uid === profile.uid ? "mine" : ""}`}
@@ -340,8 +495,8 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
             >
               <div className="chat-nickname">{msg.nickname}</div>
               <div className="chat-body">
-                {msg.photoURL ? (
-                  <img src={msg.photoURL} alt="" className="chat-avatar" />
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="chat-avatar" />
                 ) : (
                   <span className="chat-avatar-default">😊</span>
                 )}
@@ -386,7 +541,8 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
                 })}
               </div>
             </div>
-          ))}
+          );
+          })}
           {messages.length === 0 && (
             <p className="empty-message">まだメッセージがありません</p>
           )}
@@ -415,13 +571,18 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
           >
             📷
           </button>
-          <input
-            type="text"
-            value={messageText}
-            onChange={(e) => onMessageTextChange(e.target.value)}
-            placeholder="メッセージを入力"
-            maxLength={200}
-          />
+          <div className="chat-input-wrapper">
+            {!isGuest && !messageText && (
+              <span className="chat-input-label">{profile.nickname} としてメッセージを送信</span>
+            )}
+            <input
+              type="text"
+              value={messageText}
+              onChange={(e) => onMessageTextChange(e.target.value)}
+              placeholder={isGuest ? "メッセージを入力" : ""}
+              maxLength={200}
+            />
+          </div>
           <button type="submit" disabled={sending || (!messageText.trim() && !imageFile)}>
             {sending ? "..." : "送信"}
           </button>
@@ -470,6 +631,42 @@ export default function MainPage({ profile, onRequestLogin, onLogout, messageTex
           </span>
         </div>
       )}
+      {showAreaSelector && (
+        <div className="area-selector-overlay" onClick={() => setShowAreaSelector(false)}>
+          <div className="area-selector" onClick={(e) => e.stopPropagation()}>
+            <h3>エリアを選択</h3>
+            <div className="area-selector-list">
+              {AREA_NAMES.map((a) => (
+                <button
+                  key={a}
+                  className={`area-selector-item ${currentArea === a ? "active" : ""}`}
+                  onClick={() => { onAreaChange(a); setShowAreaSelector(false); }}
+                >
+                  📍 {a}
+                  {(areaDrinkCounts[a] ?? 0) > 0 && (
+                    <span className="area-drink-count">🍺 {areaDrinkCounts[a]}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 飲みたいFAB */}
+      <button
+        className={`drink-fab ${myDrink ? "active" : ""} ${countBounce ? "bounce" : ""}`}
+        style={{ left: fabPos.x, top: fabPos.y, right: "auto", bottom: "auto" }}
+        onClick={handleFabClick}
+        onPointerDown={handleFabPointerDown}
+        onPointerMove={handleFabPointerMove}
+        onPointerUp={handleFabPointerUp}
+        disabled={!isGuest && drinking}
+      >
+        🍺
+        {drinkList.length > 0 && (
+          <span className="drink-fab-badge">{drinkList.length}</span>
+        )}
+      </button>
     </div>
   );
 }

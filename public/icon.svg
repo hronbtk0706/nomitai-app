@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#f5a623"/>
+  <g transform="translate(256,280)">
+    <!-- ジョッキ本体 -->
+    <rect x="-90" y="-140" width="180" height="200" rx="16" fill="#ffdd57" stroke="#fff" stroke-width="8"/>
+    <!-- 取っ手 -->
+    <path d="M90,-80 Q140,-80 140,-20 Q140,40 90,40" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+    <!-- 泡 -->
+    <ellipse cx="-45" cy="-140" rx="50" ry="30" fill="#fff"/>
+    <ellipse cx="45" cy="-140" rx="50" ry="30" fill="#fff"/>
+    <ellipse cx="0" cy="-150" rx="40" ry="25" fill="#fff"/>
+    <!-- ビールの色ライン -->
+    <rect x="-82" y="-100" width="164" height="150" rx="8" fill="#f5a623" opacity="0.3"/>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザープロフィール
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      // 本人削除 or 24時間以上前の匿名ユーザーは誰でも削除可能（クリーンアップ用）
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId
+                        || (resource.data.isAnonymous == true
+                            && resource.data.createdAt < request.time.toMillis() - 86400000));
+    }
+
+    // 飲みたい表明
+    match /drinks/{drinkId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      // 本人削除 or 3日以上前のデータは誰でも削除可能（クリーンアップ用）
+      allow delete: if request.auth != null
+                    && (resource.data.uid == request.auth.uid
+                        || resource.data.createdAt < request.time.toMillis() - 259200000);
+      allow update: if false;
+    }
+
+    // チャットメッセージ
+    match /chats/{chatId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      // 本人削除 or 3日以上前のデータは誰でも削除可能（クリーンアップ用）
+      allow delete: if request.auth != null
+                    && (resource.data.uid == request.auth.uid
+                        || resource.data.createdAt < request.time.toMillis() - 259200000);
+      allow update: if request.auth != null;
+    }
+
+    // 通報: ログインユーザーのみ作成可能、読み取り不可（管理者がConsoleで確認）
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+                    && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+  }
+}

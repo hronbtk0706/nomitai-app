@@ -12,9 +12,11 @@ import { generateAnonName } from "../lib/anonName";
 
 interface Props {
   onBack?: () => void;
+  onShowTerms?: () => void;
+  onShowPrivacy?: () => void;
 }
 
-export default function LoginPage({ onBack }: Props) {
+export default function LoginPage({ onBack, onShowTerms, onShowPrivacy }: Props) {
   const [mode, setMode] = useState<"select" | "email">("select");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -163,6 +165,14 @@ export default function LoginPage({ onBack }: Props) {
           </button>
         </form>
       )}
+
+      <div className="legal-links">
+        <span>ログインすると</span>
+        <button type="button" className="legal-link" onClick={onShowTerms}>利用規約</button>
+        <span>と</span>
+        <button type="button" className="legal-link" onClick={onShowPrivacy}>プライバシーポリシー</button>
+        <span>に同意したことになります</span>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,24 @@
+{
+  "name": "ノミタイ - 今夜飲みたい人が見つかるチャットアプリ",
+  "short_name": "ノミタイ",
+  "description": "今夜飲みに行きたい人同士をつなげるリアルタイムチャット",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#f5a623",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

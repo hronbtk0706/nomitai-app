@@ -1,13 +1,61 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nomitai-app</title>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#f5a623" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>ノミタイ - 今夜飲みたい人が見つかるチャットアプリ</title>
+    <meta name="description" content="ノミタイは、今夜飲みに行きたい人同士をつなげるリアルタイムチャットアプリ。エリアごとのチャットで近くの飲み仲間が見つかります。" />
+    <meta name="keywords" content="飲み会,飲み仲間,飲みたい,居酒屋,チャット,飲み友,今夜,ノミタイ" />
+    <link rel="canonical" href="https://nomitai-app.web.app/" />
+
+    <!-- OGP -->
+    <meta property="og:title" content="ノミタイ - 今夜飲みたい人が見つかるチャットアプリ" />
+    <meta property="og:description" content="今夜飲みに行きたい人同士をつなげるリアルタイムチャット。エリアごとに近くの飲み仲間が見つかります。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nomitai-app.web.app/" />
+    <meta property="og:site_name" content="ノミタイ" />
+    <meta property="og:locale" content="ja_JP" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ノミタイ - 今夜飲みたい人が見つかるチャットアプリ" />
+    <meta name="twitter:description" content="今夜飲みに行きたい人同士をつなげるリアルタイムチャット。エリアごとに近くの飲み仲間が見つかります。" />
+
+    <!-- 構造化データ (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "ノミタイ",
+      "url": "https://nomitai-app.web.app/",
+      "description": "今夜飲みに行きたい人同士をつなげるリアルタイムチャットアプリ。エリアごとのチャットで近くの飲み仲間が見つかります。",
+      "applicationCategory": "SocialApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "inLanguage": "ja",
+      "availableLanguage": "ja"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>ノミタイ - 今夜飲みたい人が見つかるチャットアプリ</h1>
+      <p>ノミタイは、今夜飲みに行きたい人同士をつなげるリアルタイムチャットアプリです。</p>
+      <p>仙台・東京・大阪などエリアごとのチャットで、近くの飲み仲間が見つかります。</p>
+      <p>GPS対応で、現在地に近いエリアのチャットに自動で参加できます。</p>
+      <p>このアプリを利用するにはJavaScriptを有効にしてください。</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
