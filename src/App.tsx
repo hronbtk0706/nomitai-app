@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import Lottie from "lottie-react";
+import beerAnimation from "./assets/beer-loading.json";
 import { doc, setDoc } from "firebase/firestore";
 import { useAuth } from "./hooks/useAuth";
 import { db } from "./lib/firebase";
@@ -76,8 +78,11 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <p>読み込み中...</p>
+      <div className="splash">
+        {!navigator.userAgent.includes("ReactSnap") && (
+          <Lottie animationData={beerAnimation} loop className="splash-lottie" />
+        )}
+        <p className="splash-title">ノミタイ</p>
       </div>
     );
   }

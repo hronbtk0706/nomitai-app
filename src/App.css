@@ -5,12 +5,26 @@
   padding: 0;
 }
 
-.loading {
+.splash {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100dvh;
-  font-size: 1.1rem;
+  background: #1a1a2e;
+  gap: 8px;
+}
+
+.splash-lottie {
+  width: 220px;
+  height: 220px;
+}
+
+.splash-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f5a623;
+  letter-spacing: 0.1em;
 }
 
 /* ========== ログイン画面 ========== */

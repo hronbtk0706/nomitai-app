@@ -13,8 +13,13 @@
   "reactSnap": {
     "source": "dist",
     "destinationDir": "dist",
-    "include": ["/"],
-    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
+    "include": [
+      "/"
+    ],
+    "puppeteerArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ],
     "waitFor": 3000,
     "minifyHtml": false,
     "preloadImages": false,
@@ -22,6 +27,7 @@
   },
   "dependencies": {
     "firebase": "^12.10.0",
+    "lottie-react": "^2.4.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1"
