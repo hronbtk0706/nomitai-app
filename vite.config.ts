@@ -7,4 +7,10 @@ export default defineConfig({
   build: {
     target: ['chrome79', 'firefox67', 'safari13', 'edge79'],
   },
+  resolve: {
+    mainFields: ['module', 'main'],
+  },
+  optimizeDeps: {
+    include: ['lottie-react'],
+  },
 })
