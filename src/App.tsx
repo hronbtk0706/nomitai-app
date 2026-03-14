@@ -25,6 +25,8 @@ function App() {
     if (navigator.userAgent.includes("ReactSnap")) return false;
     return !localStorage.getItem("nomitai_gps_asked");
   });
+  const isNewSession = !navigator.userAgent.includes("ReactSnap") && !sessionStorage.getItem("nomitai_session");
+  const [splashMinDone, setSplashMinDone] = useState(!isNewSession);
   const [gpsDetecting, setGpsDetecting] = useState(false);
   const [currentArea, setCurrentArea] = useState(() => {
     return localStorage.getItem("nomitai_area") || "東京";
@@ -34,6 +36,15 @@ function App() {
   useEffect(() => {
     if (!navigator.userAgent.includes("ReactSnap")) {
       cleanupStaleData();
+    }
+  }, []);
+
+  // 新セッション時はスプラッシュを最低2秒表示
+  useEffect(() => {
+    if (isNewSession) {
+      sessionStorage.setItem("nomitai_session", "1");
+      const t = setTimeout(() => setSplashMinDone(true), 2000);
+      return () => clearTimeout(t);
     }
   }, []);
 
@@ -76,7 +87,7 @@ function App() {
     setShowGpsPrompt(false);
   };
 
-  if (loading) {
+  if (loading || !splashMinDone) {
     return (
       <div className="splash">
         {!navigator.userAgent.includes("ReactSnap") && (
